@@ -6,6 +6,9 @@
 #include <vector>
 #include <optional>
 
+//char const* vk_layer_path = "D:/project/VK/vk2/3rd/vulkanSDK/Bin";
+//SetEnvironmentVariableA("VK_LAYER_PATH", vk_layer_path);
+
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
