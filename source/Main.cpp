@@ -2,12 +2,12 @@
 #include <GlFW/glfw3.h>
 #include <cstdlib>
 #include <iostream>
+#include <optional>
 #include <stdexcept>
 #include <vector>
-#include <optional>
 
-//char const* vk_layer_path = "D:/project/VK/vk2/3rd/vulkanSDK/Bin";
-//SetEnvironmentVariableA("VK_LAYER_PATH", vk_layer_path);
+// char const* vk_layer_path = "D:/project/VK/vk2/3rd/vulkanSDK/Bin";
+// SetEnvironmentVariableA("VK_LAYER_PATH", vk_layer_path);
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -37,8 +37,8 @@ VkResult CreateDebugUtilsMessengerExt(
 }
 
 void DestroyDebugUtilsMessengerEXT(VkInstance instance,
-	VkDebugUtilsMessengerEXT debugMessenger,
-	const VkAllocationCallbacks* pAllocater) {
+								   VkDebugUtilsMessengerEXT debugMessenger,
+								   const VkAllocationCallbacks* pAllocater) {
 	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
 		instance, "vkDestroyDebugUtilsMessengerEXT");
 	if (func != nullptr) {
@@ -49,9 +49,7 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance,
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
 
-	bool isComplete() {
-		return graphicsFamily.has_value();
-	}
+	bool isComplete() { return graphicsFamily.has_value(); }
 };
 
 class HelloTriangleApp {
@@ -78,6 +76,7 @@ private:
 	void initVulkan() {
 		createInstance();
 		setupDebugMessenger();
+		pickPhysicalDevice();
 	}
 
 	void mainLoop() {
@@ -125,7 +124,7 @@ private:
 			instInfo.enabledLayerCount = 0;
 			instInfo.pNext = nullptr;
 		}
-		if (vkCreateInstance(&instInfo, nullptr, &instance)) {
+		if (vkCreateInstance(&instInfo, nullptr, &instance) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create instance");
 		}
 	}
@@ -191,7 +190,8 @@ private:
 		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCnt, nullptr);
 
 		std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCnt);
-		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCnt, queueFamilies.data());
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCnt,
+												 queueFamilies.data());
 
 		int i = 0;
 		for (const auto& queueFamily : queueFamilies) {
@@ -230,7 +230,7 @@ private:
 		const char** glfwExtensions;
 		glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCnt);
 		std::vector<const char*> extensions(glfwExtensions,
-			glfwExtensions + glfwExtensionCnt);
+											glfwExtensions + glfwExtensionCnt);
 		if (enableValidationLayers) {
 			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 		}
@@ -259,9 +259,9 @@ private:
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL
 		debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-			VkDebugUtilsMessageTypeFlagsEXT messageType,
-			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-			void* pUserData) {
+					  VkDebugUtilsMessageTypeFlagsEXT messageType,
+					  const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+					  void* pUserData) {
 		std::cerr << "validation layer:" << pCallbackData->pMessage << std::endl;
 		return VK_FALSE;
 	}
