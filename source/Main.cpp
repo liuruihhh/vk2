@@ -5,9 +5,11 @@
 #include <optional>
 #include <stdexcept>
 #include <vector>
+#include <sstream>
+#include <windows.h>
 
-// char const* vk_layer_path = "D:/project/VK/vk2/3rd/vulkanSDK/Bin";
-// SetEnvironmentVariableA("VK_LAYER_PATH", vk_layer_path);
+char const* vk_layer_path = "D:/project/vk2/3rd/vulkanSDK/Bin";
+bool vk_layer_path_env = SetEnvironmentVariableA("VK_LAYER_PATH", vk_layer_path);
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
