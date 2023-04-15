@@ -92,7 +92,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>.\3rd\GLFW\include;.\3rd\vulkanSDK\Include;.\3rd\glm-0.9.9.8;.\3rd\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\3rd\GLFW\include;.\3rd\vulkanSDK\Include;.\3rd\glm-0.9.9.8;.\3rd\stb;.\3rd\tinyobjloader;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -113,7 +113,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>.\3rd\GLFW\include;.\3rd\vulkanSDK\Include;.\3rd\glm-0.9.9.8;.\3rd\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\3rd\GLFW\include;.\3rd\vulkanSDK\Include;.\3rd\glm-0.9.9.8;.\3rd\stb;.\3rd\tinyobjloader;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -134,7 +134,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>.\3rd\GLFW\include;.\3rd\vulkanSDK\Include;.\3rd\glm-0.9.9.8;.\3rd\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\3rd\GLFW\include;.\3rd\vulkanSDK\Include;.\3rd\glm-0.9.9.8;.\3rd\stb;.\3rd\tinyobjloader;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -155,7 +155,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>.\3rd\GLFW\include;.\3rd\vulkanSDK\Include;.\3rd\glm-0.9.9.8;.\3rd\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\3rd\GLFW\include;.\3rd\vulkanSDK\Include;.\3rd\glm-0.9.9.8;.\3rd\stb;.\3rd\tinyobjloader;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
