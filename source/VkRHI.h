@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 #include <GlFW/glfw3.h>
 #include <glm/glm.hpp>
+#include "Util.h"
 
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
@@ -65,15 +66,14 @@ struct Vertex {
 
 class VkRHI {
 public:
-	bool framebufferResized;
-private:
 #pragma region class_member
+	bool framebufferResized;
+	VkDevice device;
 	GLFWwindow* window;
 	VkInstance instance;
 	VkPhysicalDevice physicalDevice;
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkSurfaceKHR surface;
-	VkDevice device;
 	VkQueue graphicsQueue;
 	VkQueue presentQueue;
 	VkSwapchainKHR swapChain;
@@ -118,7 +118,6 @@ private:
 #pragma endregion class_member
 public:
 	void run();
-private:
 	void initWindow();
 	void initVulkan();
 	void mainLoop();
@@ -140,9 +139,9 @@ private:
 	VkFormat findDepthFormat();
 	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	bool hasStencilComponent(VkFormat format);
-	void createTextureImage();
-	void createTextureImageView();
-	void createTextureSampler();
+	void createTextureImage(ImageData imageData, VkImage& image, VkDeviceMemory& imageMemory);
+	void createTextureImageView(VkImage& image, VkImageView& imageView);
+	void createTextureSampler(VkSampler& sampler);
 	void createImage(uint32_t width, uint32_t hight, uint32_t mipLevels, VkSampleCountFlagBits sampleCount, VkFormat format, VkImageTiling tiling,
 	VkImageUsageFlags usage, VkMemoryPropertyFlags memProperties, VkImage& image, VkDeviceMemory& imageMemory);
 	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectMask, uint32_t mipLevels);

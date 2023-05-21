@@ -18,8 +18,6 @@
 #include <glm/gtx/hash.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 #include <unordered_map>
@@ -132,9 +130,11 @@ void VkRHI::initVulkan() {
 	createColorResources();
 	createDepthResources();
 	createFramebuffers();
-	createTextureImage();
-	createTextureImageView();
-	createTextureSampler();
+	auto imageData = Util::stbimgLoad(texture_path);
+	createTextureImage(imageData, textureImage, textureImageMemory);
+	createTextureImageView(textureImage, textureImageView);
+	Util::stbimgFree(imageData);
+	createTextureSampler(textureSampler);
 	loadModel();
 	createVertexBuffer();
 	createIndexBuffer();
@@ -699,14 +699,9 @@ bool VkRHI::hasStencilComponent(VkFormat format) {
 	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-void VkRHI::createTextureImage() {
-	int texW, texH, texChannels;
-	stbi_uc* pixels = stbi_load(texture_path, &texW, &texH, &texChannels, STBI_rgb_alpha);
-	VkDeviceSize imgSize = texW * texH * 4;
-	mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texW, texH)))) + 1;
-	if (!pixels) {
-		throw std::runtime_error("failed to load texture image!");
-	}
+void VkRHI::createTextureImage(ImageData imageData, VkImage& image, VkDeviceMemory& imageMemory) {
+	VkDeviceSize imgSize = imageData.width * imageData.height * 4;
+	mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(imageData.width, imageData.height)))) + 1;
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
 
@@ -716,30 +711,28 @@ void VkRHI::createTextureImage() {
 
 	void* data;
 	vkMapMemory(device, stagingBufferMemory, 0, imgSize, 0, &data);
-	memcpy(data, pixels, static_cast<size_t> (imgSize));
+	memcpy(data, imageData.data, static_cast<size_t> (imgSize));
 	vkUnmapMemory(device, stagingBufferMemory);
 
-	stbi_image_free(pixels);
-
-	createImage(static_cast<uint32_t>(texW), static_cast<uint32_t>(texH), mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB
+	createImage(imageData.width, imageData.height, mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB
 	, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
 
-	transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
-	copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texW), static_cast<uint32_t>(texH));
-	//transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
+	transitionImageLayout(image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
+	copyBufferToImage(stagingBuffer, image, imageData.width, imageData.height);
+	//transitionImageLayout(image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
 
 	vkDestroyBuffer(device, stagingBuffer, nullptr);
 	vkFreeMemory(device, stagingBufferMemory, nullptr);
 
-	generateMipmaps(textureImage, VK_FORMAT_R8G8B8A8_SRGB, texW, texH, mipLevels);
+	generateMipmaps(image, VK_FORMAT_R8G8B8A8_SRGB, imageData.width, imageData.height, mipLevels);
 }
 
-void VkRHI::createTextureImageView() {
-	textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
+void VkRHI::createTextureImageView(VkImage& image, VkImageView& imageView) {
+	imageView = createImageView(image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
 }
 
-void VkRHI::createTextureSampler() {
+void VkRHI::createTextureSampler(VkSampler& sampler) {
 	VkSamplerCreateInfo samplerInfo{};
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -760,7 +753,7 @@ void VkRHI::createTextureSampler() {
 	samplerInfo.maxLod = static_cast<float>(mipLevels);
 	samplerInfo.mipLodBias = 0.0f;
 
-	if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
+	if (vkCreateSampler(device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create texture sampler!");
 	}
 }

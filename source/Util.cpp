@@ -1,6 +1,11 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+#include <vulkan/vulkan.h>
+#include <cassert>
+#include <unordered_map>
 #include "Util.h"
 
 char const* vk_layer_path = "D:/project/VK/vk2/3rd/vulkanSDK/Bin";
@@ -27,3 +32,19 @@ std::vector<char> Util::readFile(const std::string& filename) {
 	file.close();
 	return buffer;
 }
+
+ImageData Util::stbimgLoad(const char* path)
+{
+	int width, height, channels;
+	stbi_uc* pixels = stbi_load(texture_path, &width, &height, &channels, STBI_rgb_alpha);
+	if (!pixels) {
+		throw std::runtime_error("failed to load texture image!");
+	}
+	ImageData img{ static_cast<uint32_t>(width) ,static_cast<uint32_t>(height) ,pixels };
+	return img;
+};
+
+void Util::stbimgFree(ImageData imageData)
+{
+	stbi_image_free(imageData.data);
+};
