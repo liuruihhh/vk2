@@ -4,7 +4,6 @@
 
 int main() {
 	VkRHI app;
-
 	try {
 		app.run();
 	}

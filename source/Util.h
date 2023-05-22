@@ -3,10 +3,10 @@
 #include <iostream>
 #include <fstream>
 
-extern char const* vk_layer_path;
-extern char const* shader_path;
-extern char const* model_path;
-extern char const* texture_path;
+extern const std::string vk_layer_path;
+extern const std::string shader_path;
+extern const std::string model_path;
+extern const std::string texture_path;
 
 struct ImageData {
 	uint32_t width;

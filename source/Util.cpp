@@ -8,10 +8,21 @@
 #include <unordered_map>
 #include "Util.h"
 
-char const* vk_layer_path = "D:/project/VK/vk2/3rd/vulkanSDK/Bin";
-char const* shader_path = "D:/project/VK/vk2/assets/shaders/spv/";
-char const* model_path = "D:/project/VK/vk2/assets/models/viking_room.obj";
-char const* texture_path = "D:/project/VK/vk2/assets/textures/viking_room.png";
+std::string macros2Path(std::string macros) {
+	size_t pos = 0;
+	while ((pos = macros.find("\\", pos)) != std::string::npos)
+	{
+		macros.replace(pos, 1, "/");
+		pos++;
+	}
+	return macros;
+};
+
+std::string projectRoot = macros2Path(std::string(PROJECT_ROOT));
+const std::string vk_layer_path = projectRoot + std::string("3rd/vulkanSDK/Bin");
+const std::string shader_path = projectRoot + std::string("assets/shaders/spv/");
+const std::string model_path = projectRoot + std::string("assets/models/viking_room.obj");
+const std::string texture_path = projectRoot + std::string("assets/textures/viking_room.png");
 
 std::vector<char> Util::readShader(const std::string& filename) {
 	std::string filePath = shader_path;

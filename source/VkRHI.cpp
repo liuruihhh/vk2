@@ -24,7 +24,7 @@
 #include "Util.h"
 #include "VkRHI.h"
 
-bool vk_layer_path_env = SetEnvironmentVariableA("VK_LAYER_PATH", vk_layer_path);
+bool vk_layer_path_env = SetEnvironmentVariableA("VK_LAYER_PATH", vk_layer_path.c_str());
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -130,7 +130,7 @@ void VkRHI::initVulkan() {
 	createColorResources();
 	createDepthResources();
 	createFramebuffers();
-	auto imageData = Util::stbimgLoad(texture_path);
+	auto imageData = Util::stbimgLoad(texture_path.c_str());
 	createTextureImage(imageData, textureImage, textureImageMemory);
 	createTextureImageView(textureImage, textureImageView);
 	Util::stbimgFree(imageData);
@@ -1577,7 +1577,7 @@ void VkRHI::loadModel() {
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 	std::string warn, err;
-	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, model_path)) {
+	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, model_path.c_str())) {
 		throw std::runtime_error(warn + err);
 	}
 	std::unordered_map<Vertex, uint32_t> uniqueVertices{};
