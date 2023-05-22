@@ -122,7 +122,7 @@ void VkRHI::initVulkan() {
 	pickPhysicalDevice();
 	createLogicalDevice();
 	createSwapChain();
-	createImageViews();
+	createSwapChainImageViews();
 	createRenderPass();
 	createDescriptorSetLayout();
 	createGraphicsPipeline();
@@ -373,11 +373,11 @@ void VkRHI::recreateSwapChain() {
 	createSwapChain();
 	createColorResources();
 	createDepthResources();
-	createImageViews();
+	createSwapChainImageViews();
 	createFramebuffers();
 }
 
-void VkRHI::createImageViews() {
+void VkRHI::createSwapChainImageViews() {
 	swapChainImageViews.resize(swapChainImages.size());
 	for (size_t i = 0; i < swapChainImages.size(); i++) {
 		swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);

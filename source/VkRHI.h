@@ -128,7 +128,7 @@ public:
 	void createSurface();
 	void createSwapChain();
 	void recreateSwapChain();
-	void createImageViews();
+	void createSwapChainImageViews();
 	void createRenderPass();
 	void createDescriptorSetLayout();
 	void createGraphicsPipeline();
