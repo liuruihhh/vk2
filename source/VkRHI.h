@@ -84,22 +84,22 @@ public:
 	VkExtent2D swapChainExtent;
 	std::vector<VkImageView> swapChainImageViews;
 	VkRenderPass renderPass;
-	VkDescriptorSetLayout descriptorSetLayout;
-	VkPipelineLayout pipelineLayout;
-	VkPipeline graphicsPipeline;
 	std::vector<VkFramebuffer> swapChainFramebuffers;
+	//VkDescriptorSetLayout descriptorSetLayout;
+	//VkPipelineLayout pipelineLayout;
+	//VkPipeline graphicsPipeline;
 	VkCommandPool commandPool;
 	//std::vector<Vertex> vertices;
 	//std::vector<uint32_t> indices;
-	VkBuffer vertexBuffer;
-	VkDeviceMemory vertexBufferMemory;
-	VkBuffer indexBuffer;
-	VkDeviceMemory indexBufferMemory;
-	std::vector<VkBuffer> uniformBuffers;
-	std::vector<VkDeviceMemory> uniformBuffersMemory;
-	std::vector<void*> uniformBuffersMapped;
-	VkDescriptorPool descriptorPool;
-	std::vector<VkDescriptorSet> descriptorSets;
+	//VkBuffer vertexBuffer;
+	//VkDeviceMemory vertexBufferMemory;
+	//VkBuffer indexBuffer;
+	//VkDeviceMemory indexBufferMemory;
+	//std::vector<VkBuffer> uniformBuffers;
+	//std::vector<VkDeviceMemory> uniformBuffersMemory;
+	//std::vector<void*> uniformBuffersMapped;
+	//VkDescriptorPool descriptorPool;
+	//std::vector<VkDescriptorSet> descriptorSets;
 	VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 	VkImage colorImage;
 	VkDeviceMemory colorImageMemory;
@@ -108,10 +108,6 @@ public:
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
 	uint32_t mipLevels;
-	VkImage textureImage;
-	VkDeviceMemory textureImageMemory;
-	VkImageView textureImageView;
-	VkSampler textureSampler;
 	std::vector<VkCommandBuffer> commandBuffers;
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishSemaphores;
@@ -143,9 +139,9 @@ public:
 	VkFormat findDepthFormat();
 	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	bool hasStencilComponent(VkFormat format);
-	//void createTextureImage(ImageData imageData, VkImage& image, VkDeviceMemory& imageMemory);
-	//void createTextureImageView(VkImage& image, VkImageView& imageView);
-	//void createTextureSampler(VkSampler& sampler);
+	void createTextureImage(ImageData imageData, VkImage& image, VkDeviceMemory& imageMemory);
+	void createTextureImageView(VkImage& image, VkImageView& imageView);
+	void createTextureSampler(VkSampler& sampler);
 	void createImage(uint32_t width, uint32_t hight, uint32_t mipLevels, VkSampleCountFlagBits sampleCount, VkFormat format, VkImageTiling tiling,
 	VkImageUsageFlags usage, VkMemoryPropertyFlags memProperties, VkImage& image, VkDeviceMemory& imageMemory);
 	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectMask, uint32_t mipLevels);
@@ -182,7 +178,6 @@ public:
 	std::vector<const char*> getRequiredExtensions();
 	bool checkValidationLayerSupport();
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-	//void loadModel();
 	static void frameBufferResizeCallback(GLFWwindow* window, int width, int height);
 	static VKAPI_ATTR VkBool32 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 			  VkDebugUtilsMessageTypeFlagsEXT messageType,

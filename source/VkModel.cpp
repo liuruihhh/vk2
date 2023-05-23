@@ -22,7 +22,7 @@ namespace std {
 
 VkModel::~VkModel()
 {
-	cleanup();
+	//cleanup();
 }
 
 void VkModel::setup() {
@@ -30,10 +30,10 @@ void VkModel::setup() {
 	createDescriptorSetLayout();//
 	createGraphicsPipeline();//
 	auto imageData = Util::stbimgLoad(texture_path.c_str());//
-	createTextureImage(imageData, textureImage, textureImageMemory);//
-	createTextureImageView(textureImage, textureImageView);//
+	rhi->createTextureImage(imageData, textureImage, textureImageMemory);//
+	rhi->createTextureImageView(textureImage, textureImageView);//
 	Util::stbimgFree(imageData);//
-	createTextureSampler(textureSampler);//
+	rhi->createTextureSampler(textureSampler);//
 	loadModel();//
 	createVertexBuffer();//
 	createIndexBuffer();//
