@@ -3,9 +3,9 @@
 #include <iostream>
 #include <fstream>
 
+extern const std::string projectRoot;
 extern const std::string vk_layer_path;
 extern const std::string shader_path;
-extern const std::string model_path;
 extern const std::string texture_path;
 
 struct ImageData {

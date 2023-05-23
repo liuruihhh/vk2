@@ -69,9 +69,9 @@ void VkGLTFModel::loadImages(tinygltf::Model& input)
 
 		auto imgProp = imgProps[i];
 		ImageData imageData{ glTFImage.width,glTFImage.height,buffer };
-		rhi->createTextureImage(imageData, imgProp.image, imgProp.memory);
-		rhi->createTextureImageView(imgProp.image, imgProp.view);
-		rhi->createTextureSampler(imgProp.sampler);
+		//rhi->createTextureImage(imageData, imgProp.image, imgProp.memory);
+		//rhi->createTextureImageView(imgProp.image, imgProp.view);
+		//rhi->createTextureSampler(imgProp.sampler);
 
 		if (deleteBuffer)
 		{

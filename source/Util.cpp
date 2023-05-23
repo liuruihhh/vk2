@@ -18,10 +18,9 @@ std::string macros2Path(std::string macros) {
 	return macros;
 };
 
-std::string projectRoot = macros2Path(std::string(PROJECT_ROOT));
+const std::string projectRoot = macros2Path(std::string(PROJECT_ROOT));
 const std::string vk_layer_path = projectRoot + std::string("3rd/vulkanSDK/Bin");
 const std::string shader_path = projectRoot + std::string("assets/shaders/spv/");
-const std::string model_path = projectRoot + std::string("assets/models/viking_room.obj");
 const std::string texture_path = projectRoot + std::string("assets/textures/viking_room.png");
 
 std::vector<char> Util::readShader(const std::string& filename) {
@@ -47,7 +46,7 @@ std::vector<char> Util::readFile(const std::string& filename) {
 ImageData Util::stbimgLoad(const char* path)
 {
 	int width, height, channels;
-	stbi_uc* pixels = stbi_load(texture_path, &width, &height, &channels, STBI_rgb_alpha);
+	stbi_uc* pixels = stbi_load(texture_path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 	if (!pixels) {
 		throw std::runtime_error("failed to load texture image!");
 	}

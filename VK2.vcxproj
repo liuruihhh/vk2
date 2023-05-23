@@ -187,14 +187,18 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="source\IRenderCase.cpp" />
     <ClCompile Include="source\Util.cpp" />
     <ClCompile Include="source\VkGLTFModel.cpp" />
     <ClCompile Include="source\Main.cpp" />
+    <ClCompile Include="source\VkModel.cpp" />
     <ClCompile Include="source\VkRHI.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="source\IRenderCase.h" />
     <ClInclude Include="source\Util.h" />
     <ClInclude Include="source\VkGLTFModel.h" />
+    <ClInclude Include="source\VkModel.h" />
     <ClInclude Include="source\VkRHI.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

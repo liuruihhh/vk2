@@ -27,6 +27,9 @@
     <ClCompile Include="source\Util.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="source\VkModel.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\VkGLTFModel.h">
@@ -36,6 +39,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="source\Util.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="source\VkModel.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
