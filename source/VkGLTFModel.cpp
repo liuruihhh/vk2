@@ -111,18 +111,20 @@ void VkGLTFModel::loadMaterials(tinygltf::Model& input)
 		if (glTFMaterial.values.find("baseColorTexture") != glTFMaterial.values.end())
 		{
 			auto textureIdx = glTFMaterial.values["baseColorTexture"].TextureIndex();
-			auto imageIdx = texrureImageIndices[i];
+			auto imageIdx = texrureImageIndices[textureIdx];
 			mtlProp.baseColorImg = imgProps[imageIdx];
 		}
 		if (glTFMaterial.values.find("metallicRoughnessTexture") != glTFMaterial.values.end())
 		{
 			auto textureIdx = glTFMaterial.values["metallicRoughnessTexture"].TextureIndex();
-			auto imageIdx = texrureImageIndices[i];
+			auto imageIdx = texrureImageIndices[textureIdx];
 			mtlProp.metallicRoughnessImg = imgProps[imageIdx];
 		}
 		auto textureIdx = glTFMaterial.normalTexture.index;
-		auto imageIdx = texrureImageIndices[i];
-		mtlProp.metallicRoughnessImg = imgProps[imageIdx];
+		if (textureIdx > 0) {
+			auto imageIdx = texrureImageIndices[textureIdx];
+			mtlProp.normalImg = imgProps[imageIdx];
+		}
 	}
 };
 
