@@ -84,8 +84,6 @@ public:
 	void createTextureImage(ImageData imageData, VkImage& image, VkDeviceMemory& imageMemory);
 	void createTextureImageView(VkImage& image, VkImageView& imageView);
 	void createTextureSampler(VkSampler& sampler);
-	void createVertexBuffer();
-	void createIndexBuffer();
 	void createUniformBuffers();
 	void createDescriptorPool();
 	void createDescriptorSets();

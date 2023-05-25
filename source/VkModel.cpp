@@ -26,6 +26,7 @@ VkModel::~VkModel()
 }
 
 void VkModel::setup() {
+	loadModel();//
 	createRenderPass();//
 	createDescriptorSetLayout();//
 	createGraphicsPipeline();//
@@ -34,24 +35,11 @@ void VkModel::setup() {
 	rhi->createTextureImageView(textureImage, textureImageView);//
 	Util::stbimgFree(imageData);//
 	rhi->createTextureSampler(textureSampler);//
-	loadModel();//
-	createVertexBuffer();//
-	createIndexBuffer();//
+	rhi->createVertexBuffer(sizeof(vertices[0]) * vertices.size(), vertices.data(), vertexBuffer, vertexBufferMemory);//
+	rhi->createIndexBuffer(sizeof(indices[0]) * indices.size(), indices.data(), indexBuffer, indexBufferMemory);//
 	createUniformBuffers();//
 	createDescriptorPool();//
 	createDescriptorSets();//
-}
-
-void VkModel::updateUniformBuffer() {
-	static auto startTime = std::chrono::high_resolution_clock::now();
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-	UniformBufferObject ubo{};
-	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.proj = glm::perspective(glm::radians(45.0f), rhi->swapChainExtent.width / (float)rhi->swapChainExtent.height, 0.1f, 10.0f);
-	ubo.proj[1][1] *= -1;
-	memcpy(uniformBuffersMapped[rhi->currentFrame], &ubo, sizeof(ubo));
 }
 
 void VkModel::cleanup() {
@@ -71,6 +59,18 @@ void VkModel::cleanup() {
 	vkFreeMemory(rhi->device, vertexBufferMemory, nullptr);
 	vkDestroyBuffer(rhi->device, indexBuffer, nullptr);
 	vkFreeMemory(rhi->device, indexBufferMemory, nullptr);
+}
+
+void VkModel::updateUniformBuffer() {
+	static auto startTime = std::chrono::high_resolution_clock::now();
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+	UniformBufferObject ubo{};
+	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(30.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.proj = glm::perspective(glm::radians(45.0f), rhi->swapChainExtent.width / (float)rhi->swapChainExtent.height, 0.1f, 10.0f);
+	ubo.proj[1][1] *= -1;
+	memcpy(uniformBuffersMapped[rhi->currentFrame], &ubo, sizeof(ubo));
 }
 
 void VkModel::recordCommandBuffer() {
@@ -414,51 +414,6 @@ void VkModel::createTextureSampler(VkSampler& sampler) {
 	if (vkCreateSampler(rhi->device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create texture sampler!");
 	}
-}
-
-void VkModel::createVertexBuffer() {
-	VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
-	rhi->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-	, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		stagingBuffer, stagingBufferMemory);
-
-	void* data;
-	vkMapMemory(rhi->device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, vertices.data(), bufferSize);
-	vkUnmapMemory(rhi->device, stagingBufferMemory);
-
-	rhi->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		vertexBuffer, vertexBufferMemory);
-
-	rhi->copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
-	vkDestroyBuffer(rhi->device, stagingBuffer, nullptr);
-	vkFreeMemory(rhi->device, stagingBufferMemory, nullptr);
-}
-
-void VkModel::createIndexBuffer() {
-	VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
-	rhi->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-	, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		stagingBuffer, stagingBufferMemory);
-
-	void* data;
-	vkMapMemory(rhi->device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, indices.data(), bufferSize);
-	vkUnmapMemory(rhi->device, stagingBufferMemory);
-
-	rhi->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		indexBuffer, indexBufferMemory);
-
-	rhi->copyBuffer(stagingBuffer, indexBuffer, bufferSize);
-
-	vkDestroyBuffer(rhi->device, stagingBuffer, nullptr);
-	vkFreeMemory(rhi->device, stagingBufferMemory, nullptr);
 }
 
 void VkModel::createUniformBuffers() {
