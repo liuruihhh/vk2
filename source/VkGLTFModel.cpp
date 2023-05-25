@@ -11,6 +11,8 @@
 #include "VkRHI.h"
 #include "VkGLTFModel.h"
 
+const std::string model_path = projectRoot + std::string("assets/gltf/outhere_space_buddy/scene.gltf");
+
 glm::mat4 VkGLTFModel::Node::getLocalMatrix()
 {
 	return glm::translate(glm::mat4(1.0f), translation) * glm::mat4(rotation) * glm::scale(glm::mat4(1.0f), scale) * matrix;
@@ -18,10 +20,17 @@ glm::mat4 VkGLTFModel::Node::getLocalMatrix()
 
 VkGLTFModel::~VkGLTFModel()
 {
+};
+
+void VkGLTFModel::setup() {
+	loadGLTFFile(model_path);
+}
+
+void VkGLTFModel::cleanup() {
 	vkDestroyBuffer(rhi->device, vertexBuffer, nullptr);
-	vkFreeMemory(rhi->device, vertexMemory, nullptr);
+	vkFreeMemory(rhi->device, vertexBufferMemory, nullptr);
 	vkDestroyBuffer(rhi->device, indexBuffer, nullptr);
-	vkFreeMemory(rhi->device, indexMemory, nullptr);
+	vkFreeMemory(rhi->device, indexBufferMemory, nullptr);
 
 	for (ImageProptie imgProp : imgProps)
 	{
@@ -36,7 +45,13 @@ VkGLTFModel::~VkGLTFModel()
 		vkDestroyBuffer(rhi->device, skin.buffer, nullptr);
 		vkFreeMemory(rhi->device, skin.bufferMemory, nullptr);
 	}
-};
+}
+
+void VkGLTFModel::updateUniformBuffer() {
+}
+
+void VkGLTFModel::recordCommandBuffer() {
+}
 
 void VkGLTFModel::loadImages(tinygltf::Model& input)
 {
@@ -558,4 +573,38 @@ void VkGLTFModel::draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineL
 	{
 		drawNode(commandBuffer, pipelineLayout, node);
 	}
+}
+
+void VkGLTFModel::loadGLTFFile(std::string filename) {
+	tinygltf::Model    glTFInput;
+	tinygltf::TinyGLTF gltfContext;
+	std::string        error, warning;
+
+	bool fileLoaded = gltfContext.LoadASCIIFromFile(&glTFInput, &error, &warning, filename);
+	if (!fileLoaded) {
+		std::cerr << "loadGLTFFile fail:" << std::endl;
+	}
+	std::vector<uint32_t>	indices;
+	std::vector<Vertex>		vertices;
+	loadImages(glTFInput);
+	loadMaterials(glTFInput);
+	loadTextures(glTFInput);
+	const tinygltf::Scene& scene = glTFInput.scenes[0];
+	for (size_t i = 0; i < scene.nodes.size(); i++)
+	{
+		const tinygltf::Node node = glTFInput.nodes[scene.nodes[i]];
+		loadNode(node, glTFInput, nullptr, scene.nodes[i], indices, vertices);
+	}
+	loadSkins(glTFInput);
+	loadAnimations(glTFInput);
+	for (auto node : nodes)
+	{
+		updateJoints(node);
+	}
+
+	size_t vertexBufferSize = vertices.size() * sizeof(Vertex);
+	size_t indexBufferSize = indices.size() * sizeof(uint32_t);
+
+	rhi->createVertexBuffer(vertexBufferSize, vertices.data(), vertexBuffer, vertexBufferMemory);
+	rhi->createIndexBuffer(indexBufferSize, indices.data(), indexBuffer, indexBufferMemory);
 }

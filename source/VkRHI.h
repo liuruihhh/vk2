@@ -22,48 +22,6 @@ struct SwapChainSupportDetails {
 	std::vector<VkPresentModeKHR> presentModes;
 };
 
-//struct UniformBufferObject
-//{
-//	glm::mat4 model;
-//	glm::mat4 view;
-//	glm::mat4 proj;
-//};
-
-//struct Vertex {
-//	glm::vec3 pos;
-//	glm::vec3 color;
-//	glm::vec2 texCoord;
-//
-//	static VkVertexInputBindingDescription getBindingDescription() {
-//		VkVertexInputBindingDescription bindingDescription{};
-//		bindingDescription.binding = 0;
-//		bindingDescription.stride = sizeof(Vertex);
-//		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-//		return bindingDescription;
-//	}
-//
-//	static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
-//		std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions;
-//		attributeDescriptions[0].binding = 0;
-//		attributeDescriptions[0].location = 0;
-//		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-//		attributeDescriptions[0].offset = offsetof(Vertex, pos);
-//		attributeDescriptions[1].binding = 0;
-//		attributeDescriptions[1].location = 1;
-//		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-//		attributeDescriptions[1].offset = offsetof(Vertex, color);
-//		attributeDescriptions[2].binding = 0;
-//		attributeDescriptions[2].location = 2;
-//		attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-//		attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
-//		return attributeDescriptions;
-//	}
-//
-//	bool operator==(const Vertex& other) const {
-//		return pos == other.pos && color == other.color && texCoord == other.texCoord;
-//	}
-//};
-
 extern const int MAX_FRAMES_IN_FLIGHT;
 
 class VkRHI {
@@ -149,6 +107,8 @@ public:
 	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
 	void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 	void createCommandPool();
+	void createVertexBuffer(VkDeviceSize bufferSize, void* verticesData, VkBuffer& vertexBuffer, VkDeviceMemory& vertexBufferMemory);
+	void createIndexBuffer(VkDeviceSize bufferSize, void* indicesData, VkBuffer& indexBuffer, VkDeviceMemory& indexBufferMemory);
 	//void createVertexBuffer();
 	//void createIndexBuffer();
 	//void createUniformBuffers();

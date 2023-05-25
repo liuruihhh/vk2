@@ -9,9 +9,9 @@ class VkGLTFModel {
 	VkRHI* rhi;
 
 	VkBuffer vertexBuffer;
-	VkDeviceMemory vertexMemory;
+	VkDeviceMemory vertexBufferMemory;
 	VkBuffer indexBuffer;
-	VkDeviceMemory indexMemory;
+	VkDeviceMemory indexBufferMemory;
 
 	struct ImageProptie {
 		VkImage					image;
@@ -110,6 +110,10 @@ class VkGLTFModel {
 	uint32_t						activeAnimation = 0;
 
 	~VkGLTFModel();
+	void		setup();
+	void		cleanup();
+	void		updateUniformBuffer();
+	void		recordCommandBuffer();
 	void		loadImages(tinygltf::Model& input);
 	void		loadTextures(tinygltf::Model& input);
 	void		loadMaterials(tinygltf::Model& input);
@@ -124,4 +128,5 @@ class VkGLTFModel {
 	void		updateAnimation(float deltaTime);
 	void		drawNode(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkGLTFModel::Node* node);
 	void		draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
+	void		loadGLTFFile(std::string filename);
 };
