@@ -1,11 +1,22 @@
 #pragma once
-#include <GlFW/glfw3.h>
+#include <string>
+#include <algorithm>
+#include <cfloat>
+#include <limits>
+#include <vulkan/vulkan.h>
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <string>
+#define TINYGLTF_NO_STB_IMAGE_WRITE
+#include <tiny_gltf.h>
 #include "VkRHI.h"
+#include "VkGLTFModel.h"
+
 class VkGLTFModel {
+public:
 	VkRHI* rhi;
 
 	VkBuffer vertexBuffer;
@@ -95,8 +106,8 @@ class VkGLTFModel {
 		std::string                   name;
 		std::vector<AnimationSampler> samplers;
 		std::vector<AnimationChannel> channels;
-		float                         start = std::numeric_limits<float>::max();
-		float                         end = std::numeric_limits<float>::min();
+		float                         start = FLT_MAX;
+		float                         end = FLT_MIN;
 		float                         currentTime = 0.0f;
 	};
 

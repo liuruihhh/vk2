@@ -1,25 +1,3 @@
-#include <iostream>
-#include <optional>
-#include <stdexcept>
-#include <vector>
-#include <array>
-#include <chrono>
-#include <sstream>
-#include <windows.h>
-#include <algorithm>
-#include <set>
-#include <limits>
-#include <fstream>
-#include <unordered_map>
-#define GLFW_INCLUDE_VULKAN
-#include <GlFW/glfw3.h>
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/hash.hpp>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include "Util.h"
 #include "VkRHI.h"
 
 bool vk_layer_path_env = SetEnvironmentVariableA("VK_LAYER_PATH", vk_layer_path.c_str());

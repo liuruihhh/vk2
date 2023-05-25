@@ -1,12 +1,13 @@
 #include <exception>
-#include <iostream>
 #include <GlFW/glfw3.h>
 #include "VkRHI.h"
 #include "VkModel.h"
+#include "VkGLTFModel.h"
 
 int main() {
 	VkRHI rhi;
-	VkModel model;
+	//VkModel model;
+	VkGLTFModel model;
 	model.rhi = &rhi;
 	try {
 		rhi.initWindow();

@@ -1,11 +1,7 @@
 #include "VkModel.h"
-#include <unordered_map>
-#include <glm/glm.hpp>
-#include <glm/gtx/hash.hpp>
-#include <chrono>
+
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
-#include "Util.h"
 
 const std::string model_path = projectRoot + std::string("assets/models/viking_room.obj");
 
@@ -359,7 +355,7 @@ void VkModel::createGraphicsPipeline() {
 
 void VkModel::createTextureImage(ImageData imageData, VkImage& image, VkDeviceMemory& imageMemory) {
 	VkDeviceSize imgSize = imageData.width * imageData.height * 4;
-	mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(imageData.width, imageData.height)))) + 1;
+	mipLevels = static_cast<uint32_t>(std::floor(std::log2(max(imageData.width, imageData.height)))) + 1;
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
 

@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
-#include <iostream>
 #include <fstream>
+#include <stb_image.h>
 
 extern const std::string projectRoot;
 extern const std::string vk_layer_path;

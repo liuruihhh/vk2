@@ -1,12 +1,7 @@
-#include <vector>
-#include <iostream>
-#include <fstream>
+#include "Util.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-#include <vulkan/vulkan.h>
-#include <cassert>
-#include <unordered_map>
-#include "Util.h"
 
 std::string macros2Path(std::string macros) {
 	size_t pos = 0;

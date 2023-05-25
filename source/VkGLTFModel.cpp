@@ -1,15 +1,8 @@
-#include <GlFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <vulkan/vulkan.h>
-#include <string>
+#include "VkGLTFModel.h"
+
 #define TINYGLTF_IMPLEMENTATION
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include <tiny_gltf.h>
-#include "Util.h"
-#include "VkRHI.h"
-#include "VkGLTFModel.h"
 
 const std::string model_path = projectRoot + std::string("assets/gltf/outhere_space_buddy/scene.gltf");
 
@@ -82,7 +75,7 @@ void VkGLTFModel::loadImages(tinygltf::Model& input)
 			bufferSize = glTFImage.image.size();
 		}
 
-		auto imgProp = imgProps[i];
+		auto& imgProp = imgProps[i];
 		ImageData imageData{ glTFImage.width,glTFImage.height,buffer };
 		rhi->createTextureImage(imageData, imgProp.image, imgProp.memory);
 		rhi->createTextureImageView(imgProp.image, imgProp.view);
@@ -109,7 +102,7 @@ void VkGLTFModel::loadMaterials(tinygltf::Model& input)
 	materialProps.resize(input.materials.size());
 	for (size_t i = 0; i < input.materials.size(); i++)
 	{
-		auto mtlProp = materialProps[i];
+		auto& mtlProp = materialProps[i];
 		tinygltf::Material glTFMaterial = input.materials[i];
 		if (glTFMaterial.values.find("baseColorFactor") != glTFMaterial.values.end())
 		{
@@ -587,8 +580,8 @@ void VkGLTFModel::loadGLTFFile(std::string filename) {
 	std::vector<uint32_t>	indices;
 	std::vector<Vertex>		vertices;
 	loadImages(glTFInput);
-	loadMaterials(glTFInput);
 	loadTextures(glTFInput);
+	loadMaterials(glTFInput);
 	const tinygltf::Scene& scene = glTFInput.scenes[0];
 	for (size_t i = 0; i < scene.nodes.size(); i++)
 	{

@@ -1,10 +1,24 @@
 #pragma once
+#include <iostream>
+#include <optional>
+#include <stdexcept>
 #include <vector>
 #include <array>
-#include <optional>
+#include <sstream>
+#include <windows.h>
+#include <algorithm>
+#include <set>
+#include <fstream>
+#include <unordered_map>
 #include <vulkan/vulkan.h>
+#define GLFW_INCLUDE_VULKAN
 #include <GlFW/glfw3.h>
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include "Util.h"
 
 struct QueueFamilyIndices {
