@@ -815,8 +815,8 @@ void VkGLTFModel::createDescriptorSetLayout() {
 }
 
 void VkGLTFModel::createGraphicsPipeline() {
-	auto vertShaderCode = Util::readShader("triangle.vert.spv");
-	auto fragShaderCode = Util::readShader("triangle.frag.spv");
+	auto vertShaderCode = Util::readShader("gltfmodel.vert.glsl.spv");
+	auto fragShaderCode = Util::readShader("gltfmodel.frag.glsl.spv");
 	VkShaderModule vertShaderModule = rhi->createShaderModule(vertShaderCode);
 	VkShaderModule fragShaderModule = rhi->createShaderModule(fragShaderCode);
 
@@ -982,10 +982,10 @@ void VkGLTFModel::createDescriptorPool() {
 }
 
 void VkGLTFModel::createDescriptorSets() {
-	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
-
 	auto frameSetCount = static_cast<uint32_t>(1 + imgProps.size() + skins.size());
 	auto setCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * frameSetCount);
+
+	std::vector<VkDescriptorSetLayout> layouts(setCount, descriptorSetLayout);
 
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -994,6 +994,7 @@ void VkGLTFModel::createDescriptorSets() {
 	allocInfo.pSetLayouts = layouts.data();
 
 	descriptorSets.resize(setCount);
+
 	if (vkAllocateDescriptorSets(rhi->device, &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate descriptor sets!");
 	}
