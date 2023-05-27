@@ -26,6 +26,12 @@ void VkGLTFModel::setup() {
 }
 
 void VkGLTFModel::cleanup() {
+	vkDestroyDescriptorPool(rhi->device, descriptorPool, nullptr);
+	vkDestroyDescriptorSetLayout(rhi->device, descriptorSetLayout, nullptr);
+	vkDestroyPipeline(rhi->device, graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(rhi->device, pipelineLayout, nullptr);
+	vkDestroyRenderPass(rhi->device, rhi->renderPass, nullptr);
+
 	vkDestroyBuffer(rhi->device, vertexBuffer, nullptr);
 	vkFreeMemory(rhi->device, vertexBufferMemory, nullptr);
 	vkDestroyBuffer(rhi->device, indexBuffer, nullptr);
@@ -48,6 +54,11 @@ void VkGLTFModel::cleanup() {
 			vkFreeMemory(rhi->device, skin.jointMatricesBufferMemories[i], nullptr);
 		}
 	}
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		vkDestroyBuffer(rhi->device, uniformBuffers[i], nullptr);
+		vkFreeMemory(rhi->device, uniformBuffersMemory[i], nullptr);
+	}
 }
 
 void VkGLTFModel::drawFrame(float delta)
@@ -60,8 +71,8 @@ void VkGLTFModel::drawFrame(float delta)
 void VkGLTFModel::updateUniformBuffer() {
 	UniformBufferObject ubo{};
 	glm::vec3 upVec = glm::vec3(-1.0f, 2.0f, 0.0f);
-	glm::vec3 cneter = glm::vec3(0.0f, 0.0f, 0.0f);
-	ubo.viewPos = glm::vec3(-3.0f, 2.0f, 2.0f);
+	glm::vec3 cneter = glm::vec3(0.3f, 0.5f, 0.5f);
+	ubo.viewPos = glm::vec3(1.5f, 1.0f, 1.5f);
 	ubo.lightPos = glm::vec3(2.0f, 2.0f, 4.0f);
 	ubo.view = glm::lookAt(ubo.viewPos, cneter, upVec);
 	ubo.proj = glm::perspective(glm::radians(45.0f), rhi->swapChainExtent.width / (float)rhi->swapChainExtent.height, 0.1f, 10.0f);
@@ -295,7 +306,7 @@ void VkGLTFModel::loadNode(const tinygltf::Node& inputNode, const tinygltf::Mode
 					vert.pos = glm::vec4(glm::make_vec3(&positionBuffer[v * 3]), 1.0f);
 					vert.normal = glm::normalize(glm::vec3(normalsBuffer ? glm::make_vec3(&normalsBuffer[v * 3]) : glm::vec3(0.0f)));
 					vert.tangent = glm::normalize(glm::vec4(tangentsBuffer ? glm::make_vec4(&tangentsBuffer[v * 4]) : glm::vec4(0.0f)));
-					vert.uv = texCoordsBuffer ? glm::make_vec2(&texCoordsBuffer[v * 2]) : glm::vec3(0.0f);
+					vert.uv = texCoordsBuffer ? glm::make_vec2(&texCoordsBuffer[v * 2]) : glm::vec2(0.0f);
 					vert.color = glm::vec3(1.0f);
 					if (hasSkin) {
 						vert.jointIndices = glm::make_vec4(&jointIndicesBuffer[v * 4]);
@@ -629,20 +640,20 @@ void VkGLTFModel::drawNode(VkCommandBuffer commandBuffer, VkPipelineLayout pipel
 		vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &nodeMatrix);
 		if (node->skin >= 0)
 		{
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &skins[node->skin].jointMatricesDescriptorSets[rhi->currentFrame], 0, nullptr);
+			//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &skins[node->skin].jointMatricesDescriptorSets[rhi->currentFrame], 0, nullptr);
 		}
 		for (VkGLTFModel::Primitive& primitive : node->primitives)
 		{
 			if (primitive.indexCount > 0)
 			{
 				if (primitive.materialPropertie.baseColorImg) {
-					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &primitive.materialPropertie.baseColorImg->descriptorSet, 0, nullptr);
+					//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &primitive.materialPropertie.baseColorImg->descriptorSet, 0, nullptr);
 				}
 				if (primitive.materialPropertie.normalImg) {
-					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &primitive.materialPropertie.normalImg->descriptorSet, 0, nullptr);
+					//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &primitive.materialPropertie.normalImg->descriptorSet, 0, nullptr);
 				}
 				if (primitive.materialPropertie.metallicRoughnessImg) {
-					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &primitive.materialPropertie.metallicRoughnessImg->descriptorSet, 0, nullptr);
+					//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &primitive.materialPropertie.metallicRoughnessImg->descriptorSet, 0, nullptr);
 				}
 				vkCmdDrawIndexed(commandBuffer, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
 			}
@@ -1001,7 +1012,7 @@ void VkGLTFModel::createDescriptorPool() {
 }
 
 void VkGLTFModel::createDescriptorSets() {
-	auto frameSetCount = static_cast<uint32_t>(1 + imgProps.size() + skins.size());
+	auto frameSetCount = static_cast<uint32_t>(1 + skins.size() + imgProps.size());
 	auto setCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * frameSetCount);
 
 	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
@@ -1062,9 +1073,9 @@ void VkGLTFModel::createDescriptorSets() {
 		for (size_t j = 0; j < imgProps.size(); j++) {
 			VkDescriptorImageInfo imageInfo{};
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = imgProps[j].view;
-			imageInfo.sampler = imgProps[j].sampler;
-			imgProps[j].descriptorSet = descriptorSets[i];
+			imageInfo.imageView = imgProps[0].view;
+			imageInfo.sampler = imgProps[0].sampler;
+			//imgProps[j].descriptorSet = descriptorSets[i];
 
 			descriptorWrites[writeIdx + j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			descriptorWrites[writeIdx + j].dstSet = descriptorSets[i];

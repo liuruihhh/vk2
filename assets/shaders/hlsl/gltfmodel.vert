@@ -44,6 +44,7 @@ VSOutput main(VSInput input)
 	VSOutput output = (VSOutput)0;
 	output.Normal = input.Normal;
 	output.Tangent = input.Tangent;
+	output.UV = input.UV;
 	output.Color = input.Color;
 	output.ViewPos = ubo.ViewPos;
 	output.LightPos = ubo.LightPos;

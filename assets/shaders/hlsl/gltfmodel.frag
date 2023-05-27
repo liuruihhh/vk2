@@ -2,6 +2,10 @@
 
 Texture2D baseColorMap : register(t2);
 SamplerState samplerBaseColorMap : register(s2);
+Texture2D normalMap : register(t3);
+SamplerState samplerNormalMap : register(s3);
+Texture2D metallicRoughnessMap : register(t4);
+SamplerState samplerMetallicRoughnessMap : register(s4);
 
 struct VSOutput
 {
@@ -16,7 +20,7 @@ struct VSOutput
 
 float4 main(VSOutput input) : SV_TARGET
 {
-	float4 color = baseColorMap.Sample(samplerBaseColorMap, input.UV) * float4(input.Color, 1.0);
+	float4 color = baseColorMap.Sample(samplerBaseColorMap, input.UV);
 
 	float3 N = normalize(input.Normal);
 	float3 L = normalize(input.LightPos);
