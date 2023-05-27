@@ -50,12 +50,20 @@ void VkGLTFModel::cleanup() {
 	}
 }
 
+void VkGLTFModel::drawFrame(float delta)
+{
+	updateUniformBuffer();
+	updateAnimation(delta / 5.0f);
+	recordCommandBuffer();
+}
+
 void VkGLTFModel::updateUniformBuffer() {
-	static auto startTime = std::chrono::high_resolution_clock::now();
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 	UniformBufferObject ubo{};
-	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	glm::vec3 upVec = glm::vec3(-1.0f, 2.0f, 0.0f);
+	glm::vec3 cneter = glm::vec3(0.0f, 0.0f, 0.0f);
+	ubo.viewPos = glm::vec3(-3.0f, 2.0f, 2.0f);
+	ubo.lightPos = glm::vec3(2.0f, 2.0f, 4.0f);
+	ubo.view = glm::lookAt(ubo.viewPos, cneter, upVec);
 	ubo.proj = glm::perspective(glm::radians(45.0f), rhi->swapChainExtent.width / (float)rhi->swapChainExtent.height, 0.1f, 10.0f);
 	ubo.proj[1][1] *= -1;
 	memcpy(uniformBuffersMapped[rhi->currentFrame], &ubo, sizeof(ubo));
@@ -98,10 +106,6 @@ void VkGLTFModel::recordCommandBuffer() {
 	scissor.extent = rhi->swapChainExtent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	VkBuffer vertexBuffers[] = { vertexBuffer };
-	VkDeviceSize offsets[] = { 0 };
-	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-	vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[rhi->currentFrame], 0, nullptr);
 	draw(commandBuffer, pipelineLayout);
 	vkCmdEndRenderPass(commandBuffer);
@@ -176,18 +180,18 @@ void VkGLTFModel::loadMaterials(tinygltf::Model& input)
 		{
 			auto textureIdx = glTFMaterial.values["baseColorTexture"].TextureIndex();
 			auto imageIdx = texrureImageIndices[textureIdx];
-			mtlProp.baseColorImg = imgProps[imageIdx];
+			mtlProp.baseColorImg = &imgProps[imageIdx];
 		}
 		if (glTFMaterial.values.find("metallicRoughnessTexture") != glTFMaterial.values.end())
 		{
 			auto textureIdx = glTFMaterial.values["metallicRoughnessTexture"].TextureIndex();
 			auto imageIdx = texrureImageIndices[textureIdx];
-			mtlProp.metallicRoughnessImg = imgProps[imageIdx];
+			mtlProp.metallicRoughnessImg = &imgProps[imageIdx];
 		}
 		auto textureIdx = glTFMaterial.normalTexture.index;
 		if (textureIdx > 0) {
 			auto imageIdx = texrureImageIndices[textureIdx];
-			mtlProp.normalImg = imgProps[imageIdx];
+			mtlProp.normalImg = &imgProps[imageIdx];
 		}
 	}
 };
@@ -199,6 +203,9 @@ void VkGLTFModel::loadNode(const tinygltf::Node& inputNode, const tinygltf::Mode
 	node->parent = parent;
 	node->index = nodeIndex;
 	node->skin = inputNode.skin;
+	if (node->skin >= 0) {
+		auto a = 1;
+	}
 	nodeCnt++;
 
 	if (inputNode.translation.size() == 3)
@@ -290,6 +297,14 @@ void VkGLTFModel::loadNode(const tinygltf::Node& inputNode, const tinygltf::Mode
 					vert.tangent = glm::normalize(glm::vec4(tangentsBuffer ? glm::make_vec4(&tangentsBuffer[v * 4]) : glm::vec4(0.0f)));
 					vert.uv = texCoordsBuffer ? glm::make_vec2(&texCoordsBuffer[v * 2]) : glm::vec3(0.0f);
 					vert.color = glm::vec3(1.0f);
+					if (hasSkin) {
+						vert.jointIndices = glm::make_vec4(&jointIndicesBuffer[v * 4]);
+						vert.jointWeights = glm::make_vec4(&jointWeightsBuffer[v * 4]);
+					}
+					else {
+						vert.jointIndices = glm::vec4(0.0f);
+						vert.jointWeights = glm::vec4(0.0f);
+					}
 					vertexBuffer.push_back(vert);
 				}
 			}
@@ -379,13 +394,14 @@ void VkGLTFModel::loadSkins(tinygltf::Model& input)
 			skins[i].jointMatricesbuffers.resize(MAX_FRAMES_IN_FLIGHT);
 			skins[i].jointMatricesBufferMemories.resize(MAX_FRAMES_IN_FLIGHT);
 			skins[i].jointMatricesBufferMappeds.resize(MAX_FRAMES_IN_FLIGHT);
+			skins[i].jointMatricesDescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
 
 			for (size_t j = 0; j < MAX_FRAMES_IN_FLIGHT; j++) {
 				rhi->createBuffer(bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 					VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 					skins[i].jointMatricesbuffers[j], skins[i].jointMatricesBufferMemories[j]);
 
-				vkMapMemory(rhi->device, skins[i].jointMatricesBufferMemories[j], 0, bufferSize, 0, &skins[i].jointMatricesBufferMappeds[j]);
+				vkMapMemory(rhi->device, skins[i].jointMatricesBufferMemories[j], 0, bufferSize, 0, &(skins[i].jointMatricesBufferMappeds[j]));
 			}
 		}
 	}
@@ -551,6 +567,8 @@ void VkGLTFModel::updateAnimation(float deltaTime)
 		animation.currentTime -= animation.end;
 	}
 
+	//std::cout << "currentTime" << animation.currentTime << std::endl;
+
 	for (auto& channel : animation.channels)
 	{
 		AnimationSampler& sampler = animation.samplers[channel.samplerIndex];
@@ -611,15 +629,21 @@ void VkGLTFModel::drawNode(VkCommandBuffer commandBuffer, VkPipelineLayout pipel
 		vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &nodeMatrix);
 		if (node->skin >= 0)
 		{
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &skins[node->skin].jointMatricesDescriptorSets[rhi->currentFrame], 0, nullptr);
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &skins[node->skin].jointMatricesDescriptorSets[rhi->currentFrame], 0, nullptr);
 		}
 		for (VkGLTFModel::Primitive& primitive : node->primitives)
 		{
 			if (primitive.indexCount > 0)
 			{
-				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 2, 1, &primitive.materialPropertie.baseColorImg.descriptorSet, 0, nullptr);
-				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 3, 1, &primitive.materialPropertie.normalImg.descriptorSet, 0, nullptr);
-				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 4, 1, &primitive.materialPropertie.metallicRoughnessImg.descriptorSet, 0, nullptr);
+				if (primitive.materialPropertie.baseColorImg) {
+					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &primitive.materialPropertie.baseColorImg->descriptorSet, 0, nullptr);
+				}
+				if (primitive.materialPropertie.normalImg) {
+					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &primitive.materialPropertie.normalImg->descriptorSet, 0, nullptr);
+				}
+				if (primitive.materialPropertie.metallicRoughnessImg) {
+					vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &primitive.materialPropertie.metallicRoughnessImg->descriptorSet, 0, nullptr);
+				}
 				vkCmdDrawIndexed(commandBuffer, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
 			}
 		}
@@ -760,44 +784,36 @@ void VkGLTFModel::createDescriptorSetLayout() {
 	uboLayoutBinding.pImmutableSamplers = nullptr;
 	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-	VkDescriptorSetLayoutBinding nodeMatricesLayoutBinding{};
-	nodeMatricesLayoutBinding.binding = 1;
-	nodeMatricesLayoutBinding.descriptorCount = 1;
-	nodeMatricesLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	nodeMatricesLayoutBinding.pImmutableSamplers = nullptr;
-	nodeMatricesLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
 	VkDescriptorSetLayoutBinding jointMatricesLayoutBinding{};
-	jointMatricesLayoutBinding.binding = 2;
+	jointMatricesLayoutBinding.binding = 1;
 	jointMatricesLayoutBinding.descriptorCount = 1;
 	jointMatricesLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	jointMatricesLayoutBinding.pImmutableSamplers = nullptr;
 	jointMatricesLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
 	VkDescriptorSetLayoutBinding baseColorSamplerLayoutBinding{};
-	baseColorSamplerLayoutBinding.binding = 3;
+	baseColorSamplerLayoutBinding.binding = 2;
 	baseColorSamplerLayoutBinding.descriptorCount = 1;
 	baseColorSamplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	baseColorSamplerLayoutBinding.pImmutableSamplers = nullptr;
 	baseColorSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
 	VkDescriptorSetLayoutBinding normalSamplerLayoutBinding{};
-	normalSamplerLayoutBinding.binding = 4;
+	normalSamplerLayoutBinding.binding = 3;
 	normalSamplerLayoutBinding.descriptorCount = 1;
 	normalSamplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	normalSamplerLayoutBinding.pImmutableSamplers = nullptr;
 	normalSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
 	VkDescriptorSetLayoutBinding metallicRoughnessSamplerLayoutBinding{};
-	metallicRoughnessSamplerLayoutBinding.binding = 5;
+	metallicRoughnessSamplerLayoutBinding.binding = 4;
 	metallicRoughnessSamplerLayoutBinding.descriptorCount = 1;
 	metallicRoughnessSamplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	metallicRoughnessSamplerLayoutBinding.pImmutableSamplers = nullptr;
 	metallicRoughnessSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-	std::array<VkDescriptorSetLayoutBinding, 6> bindings = {
+	std::array<VkDescriptorSetLayoutBinding, 5> bindings = {
 		uboLayoutBinding,
-		nodeMatricesLayoutBinding,
 		jointMatricesLayoutBinding,
 		baseColorSamplerLayoutBinding,
 		normalSamplerLayoutBinding,
@@ -815,8 +831,11 @@ void VkGLTFModel::createDescriptorSetLayout() {
 }
 
 void VkGLTFModel::createGraphicsPipeline() {
-	auto vertShaderCode = Util::readShader("gltfmodel.vert.glsl.spv");
-	auto fragShaderCode = Util::readShader("gltfmodel.frag.glsl.spv");
+	auto vertShaderCode = Util::readShader("gltfmodel.vert.hlsl.spv");
+	auto fragShaderCode = Util::readShader("gltfmodel.frag.hlsl.spv");
+
+	//auto vertShaderCode = Util::readShader("triangle.vert.spv");
+	//auto fragShaderCode = Util::readShader("triangle.frag.spv");
 	VkShaderModule vertShaderModule = rhi->createShaderModule(vertShaderCode);
 	VkShaderModule fragShaderModule = rhi->createShaderModule(fragShaderCode);
 
@@ -965,10 +984,10 @@ void VkGLTFModel::createDescriptorPool() {
 	std::array<VkDescriptorPoolSize, 3> poolSizes{};
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * imgProps.size());
-	poolSizes[2].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	poolSizes[2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * skins.size());
+	poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * skins.size());
+	poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSizes[2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * imgProps.size());
 
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -985,15 +1004,15 @@ void VkGLTFModel::createDescriptorSets() {
 	auto frameSetCount = static_cast<uint32_t>(1 + imgProps.size() + skins.size());
 	auto setCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * frameSetCount);
 
-	std::vector<VkDescriptorSetLayout> layouts(setCount, descriptorSetLayout);
+	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
 
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocInfo.descriptorPool = descriptorPool;
-	allocInfo.descriptorSetCount = setCount;
+	allocInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
 	allocInfo.pSetLayouts = layouts.data();
 
-	descriptorSets.resize(setCount);
+	descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
 
 	if (vkAllocateDescriptorSets(rhi->device, &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate descriptor sets!");
@@ -1027,14 +1046,15 @@ void VkGLTFModel::createDescriptorSets() {
 			jointMatricesbufferInfo.buffer = skins[j].jointMatricesbuffers[i];
 			jointMatricesbufferInfo.offset = 0;
 			jointMatricesbufferInfo.range = sizeof(glm::mat4) * skins[j].inverseBindMatrices.size();
+			skins[j].jointMatricesDescriptorSets[i] = descriptorSets[i];
 
 			descriptorWrites[writeIdx + j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			descriptorWrites[writeIdx + j].dstSet = descriptorSets[i];
-			descriptorWrites[writeIdx + j].dstBinding = 0;
+			descriptorWrites[writeIdx + j].dstBinding = writeIdx + j;
 			descriptorWrites[writeIdx + j].dstArrayElement = 0;
 			descriptorWrites[writeIdx + j].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 			descriptorWrites[writeIdx + j].descriptorCount = 1;
-			descriptorWrites[writeIdx + j].pBufferInfo = &ubobufferInfo;
+			descriptorWrites[writeIdx + j].pBufferInfo = &jointMatricesbufferInfo;
 			descriptorWrites[writeIdx + j].pImageInfo = nullptr;
 			descriptorWrites[writeIdx + j].pTexelBufferView = nullptr;
 		}
@@ -1044,10 +1064,11 @@ void VkGLTFModel::createDescriptorSets() {
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			imageInfo.imageView = imgProps[j].view;
 			imageInfo.sampler = imgProps[j].sampler;
+			imgProps[j].descriptorSet = descriptorSets[i];
 
 			descriptorWrites[writeIdx + j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			descriptorWrites[writeIdx + j].dstSet = descriptorSets[i];
-			descriptorWrites[writeIdx + j].dstBinding = 1;
+			descriptorWrites[writeIdx + j].dstBinding = writeIdx + j;
 			descriptorWrites[writeIdx + j].dstArrayElement = 0;
 			descriptorWrites[writeIdx + j].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			descriptorWrites[writeIdx + j].descriptorCount = 1;

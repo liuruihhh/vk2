@@ -57,6 +57,12 @@ void VkModel::cleanup() {
 	vkFreeMemory(rhi->device, indexBufferMemory, nullptr);
 }
 
+void VkModel::drawFrame(float delta)
+{
+	updateUniformBuffer();
+	recordCommandBuffer();
+}
+
 void VkModel::updateUniformBuffer() {
 	static auto startTime = std::chrono::high_resolution_clock::now();
 	auto currentTime = std::chrono::high_resolution_clock::now();
@@ -226,8 +232,8 @@ void VkModel::createDescriptorSetLayout() {
 }
 
 void VkModel::createGraphicsPipeline() {
-	auto vertShaderCode = Util::readShader("triangle.vert.spv");
-	auto fragShaderCode = Util::readShader("triangle.frag.spv");
+	auto vertShaderCode = Util::readShader("model.vert.glsl.spv");
+	auto fragShaderCode = Util::readShader("model.frag.glsl.spv");
 	VkShaderModule vertShaderModule = rhi->createShaderModule(vertShaderCode);
 	VkShaderModule fragShaderModule = rhi->createShaderModule(fragShaderCode);
 

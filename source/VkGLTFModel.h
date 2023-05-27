@@ -1,5 +1,4 @@
 #pragma once
-#include <chrono>
 #include <string>
 #include <algorithm>
 #include <cfloat>
@@ -34,9 +33,9 @@ public:
 
 	struct MaterialPropertie {
 		glm::vec4 baseColorFactor = glm::vec4(1.0f);
-		ImageProptie baseColorImg;
-		ImageProptie normalImg;
-		ImageProptie metallicRoughnessImg;
+		ImageProptie* baseColorImg;
+		ImageProptie* normalImg;
+		ImageProptie* metallicRoughnessImg;
 	};
 
 	struct Vertex {
@@ -159,6 +158,8 @@ public:
 	{
 		glm::mat4 view;
 		glm::mat4 proj;
+		glm::vec3 viewPos;
+		glm::vec3 lightPos;
 	};
 
 	VkRHI* rhi;
@@ -188,6 +189,7 @@ public:
 	~VkGLTFModel();
 	void		setup();
 	void		cleanup();
+	void		drawFrame(float delta);
 	void		updateUniformBuffer();
 	void		recordCommandBuffer();
 	void		loadImages(tinygltf::Model& input);

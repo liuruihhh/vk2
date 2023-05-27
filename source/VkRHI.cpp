@@ -97,6 +97,7 @@ void VkRHI::mainLoop() {
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 		beginDrawFrame();
+		//updateUniformBuffer(currentFrame);
 		endDrawFrame();
 	}
 	vkDeviceWaitIdle(device);

@@ -82,8 +82,9 @@ public:
 
 	~VkModel();
 	void setup();
-	void updateUniformBuffer();
 	void cleanup();
+	void drawFrame(float delta);
+	void updateUniformBuffer();
 	void recordCommandBuffer();
 	void createRenderPass();
 	void createDescriptorSetLayout();

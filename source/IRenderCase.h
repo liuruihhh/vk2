@@ -9,6 +9,5 @@ public:
 	virtual ~IRenderCase() = 0;
 	virtual void setup() = 0;
 	virtual void cleanup() = 0;
-	virtual void recordCommandBuffer() = 0;
-	virtual void updateUniformBuffer() = 0;
+	virtual void drawFrame(float delta) = 0;
 };
