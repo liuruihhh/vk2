@@ -7,8 +7,8 @@
 #include "VkGLTFModel.h"
 
 int main() {
-	std::chrono::steady_clock::time_point tStart, tEnd;
-	float tDelta;
+	std::chrono::steady_clock::time_point rStart, tStart, tEnd;
+	float rDelta, tDelta;
 	VkRHI rhi;
 	//VkModel model;
 	VkGLTFModel model;
@@ -18,20 +18,20 @@ int main() {
 		rhi.initVulkan();
 		model.setup();
 		rhi.createFramebuffers();
-		tStart = tEnd = std::chrono::high_resolution_clock::now();
+		rStart = tStart = tEnd = std::chrono::high_resolution_clock::now();
 		while (!glfwWindowShouldClose(rhi.window)) {
 			glfwPollEvents();
 			rhi.beginDrawFrame();
 			tStart = std::chrono::high_resolution_clock::now();
 			tDelta = std::chrono::duration<float, std::milli>(tStart - tEnd).count();
-			model.drawFrame(tDelta);
+			rDelta = std::chrono::duration<float, std::milli>(tStart - rStart).count();
+			model.drawFrame(tDelta, rDelta);
 			rhi.endDrawFrame();
 			tEnd = std::chrono::high_resolution_clock::now();
 		}
 		vkDeviceWaitIdle(rhi.device);
 		model.cleanup();
 		rhi.cleanup();
-		//rhi.run();
 	}
 	catch (const std::exception& e) {
 		std::cerr << e.what() << std::endl;

@@ -158,8 +158,13 @@ public:
 	{
 		glm::mat4 view;
 		glm::mat4 proj;
-		glm::vec3 viewPos;
-		glm::vec3 lightPos;
+		glm::vec4 viewPos;
+		glm::vec4 lightPos;
+	};
+
+	struct PushConstObject {
+		glm::mat4 model;
+		glm::vec4 baseColorFactor;
 	};
 
 	VkRHI* rhi;
@@ -189,8 +194,8 @@ public:
 	~VkGLTFModel();
 	void		setup();
 	void		cleanup();
-	void		drawFrame(float delta);
-	void		updateUniformBuffer();
+	void		drawFrame(float delta, float time);
+	void		updateUniformBuffer(float delta, float time);
 	void		recordCommandBuffer();
 	void		loadImages(tinygltf::Model& input);
 	void		loadTextures(tinygltf::Model& input);

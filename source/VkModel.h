@@ -1,5 +1,4 @@
 #pragma once
-#include <chrono>
 #include <array>
 #include <vector>
 #include <unordered_map>
@@ -83,8 +82,8 @@ public:
 	~VkModel();
 	void setup();
 	void cleanup();
-	void drawFrame(float delta);
-	void updateUniformBuffer();
+	void drawFrame(float delta, float time);
+	void updateUniformBuffer(float delta, float time);
 	void recordCommandBuffer();
 	void createRenderPass();
 	void createDescriptorSetLayout();

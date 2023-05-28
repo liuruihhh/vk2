@@ -61,20 +61,21 @@ void VkGLTFModel::cleanup() {
 	}
 }
 
-void VkGLTFModel::drawFrame(float delta)
+void VkGLTFModel::drawFrame(float delta, float time)
 {
-	updateUniformBuffer();
+	updateUniformBuffer(delta, time);
 	updateAnimation(delta / 5.0f);
 	recordCommandBuffer();
 }
 
-void VkGLTFModel::updateUniformBuffer() {
+void VkGLTFModel::updateUniformBuffer(float delta, float time) {
 	UniformBufferObject ubo{};
 	glm::vec3 upVec = glm::vec3(-1.0f, 2.0f, 0.0f);
 	glm::vec3 cneter = glm::vec3(0.3f, 0.5f, 0.5f);
-	ubo.viewPos = glm::vec3(1.5f, 1.0f, 1.5f);
-	ubo.lightPos = glm::vec3(2.0f, 2.0f, 4.0f);
-	ubo.view = glm::lookAt(ubo.viewPos, cneter, upVec);
+	ubo.viewPos = glm::vec4(1.5f, 1.0f, 1.5f, 0.0f);
+	ubo.lightPos = glm::vec4(2.0f, 2.0f, 4.0f, 0.0);
+
+	ubo.view = glm::lookAt(glm::make_vec3(ubo.viewPos), cneter, upVec);
 	ubo.proj = glm::perspective(glm::radians(45.0f), rhi->swapChainExtent.width / (float)rhi->swapChainExtent.height, 0.1f, 10.0f);
 	ubo.proj[1][1] *= -1;
 	memcpy(uniformBuffersMapped[rhi->currentFrame], &ubo, sizeof(ubo));
@@ -96,7 +97,7 @@ void VkGLTFModel::recordCommandBuffer() {
 	renderPassInfo.renderArea.extent = rhi->swapChainExtent;
 
 	std::array<VkClearValue, 2> clearValues{};
-	clearValues[0].color = { {0.0f,0.0f,0.0f,1.0f} };
+	clearValues[0].color = { {0.2f,0.2f,0.2f,1.0f} };
 	clearValues[1].depthStencil = { 1.0f,0 };
 	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());;
 	renderPassInfo.pClearValues = clearValues.data();
@@ -637,7 +638,6 @@ void VkGLTFModel::drawNode(VkCommandBuffer commandBuffer, VkPipelineLayout pipel
 			nodeMatrix = currentParent->matrix * nodeMatrix;
 			currentParent = currentParent->parent;
 		}
-		vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &nodeMatrix);
 		if (node->skin >= 0)
 		{
 			//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &skins[node->skin].jointMatricesDescriptorSets[rhi->currentFrame], 0, nullptr);
@@ -646,6 +646,10 @@ void VkGLTFModel::drawNode(VkCommandBuffer commandBuffer, VkPipelineLayout pipel
 		{
 			if (primitive.indexCount > 0)
 			{
+				PushConstObject pco{};
+				pco.model = nodeMatrix;
+				pco.baseColorFactor = primitive.materialPropertie.baseColorFactor;
+				vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstObject), &pco);
 				if (primitive.materialPropertie.baseColorImg) {
 					//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &primitive.materialPropertie.baseColorImg->descriptorSet, 0, nullptr);
 				}
@@ -890,7 +894,7 @@ void VkGLTFModel::createGraphicsPipeline() {
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
 	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterizer.lineWidth = 1.0f;
-	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterizer.cullMode = VK_CULL_MODE_NONE;
 	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizer.depthBiasEnable = VK_FALSE;
 
@@ -903,7 +907,13 @@ void VkGLTFModel::createGraphicsPipeline() {
 	VkPipelineColorBlendAttachmentState colorBlendAttachment{};
 	colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
 		VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	colorBlendAttachment.blendEnable = VK_FALSE;
+	colorBlendAttachment.blendEnable = VK_TRUE;
+	colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+	colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+	colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+	colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+	colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+	colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
 
 	VkPipelineColorBlendStateCreateInfo colorBlending{};
 	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -937,9 +947,9 @@ void VkGLTFModel::createGraphicsPipeline() {
 	dynamicStateInfo.pDynamicStates = dynamicStates.data();
 
 	VkPushConstantRange pushConstantRange{};
-	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 	pushConstantRange.offset = 0;
-	pushConstantRange.size = sizeof(glm::mat4);
+	pushConstantRange.size = sizeof(PushConstObject);
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -1038,55 +1048,84 @@ void VkGLTFModel::createDescriptorSets() {
 		ubobufferInfo.offset = 0;
 		ubobufferInfo.range = sizeof(UniformBufferObject);
 
-		size_t writeIdx = 0;
+		size_t dstBinding = 0;
 
-		descriptorWrites[writeIdx].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[writeIdx].dstSet = descriptorSets[i];
-		descriptorWrites[writeIdx].dstBinding = 0;
-		descriptorWrites[writeIdx].dstArrayElement = 0;
-		descriptorWrites[writeIdx].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrites[writeIdx].descriptorCount = 1;
-		descriptorWrites[writeIdx].pBufferInfo = &ubobufferInfo;
-		descriptorWrites[writeIdx].pImageInfo = nullptr;
-		descriptorWrites[writeIdx].pTexelBufferView = nullptr;
+		descriptorWrites[dstBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[dstBinding].dstSet = descriptorSets[i];
+		descriptorWrites[dstBinding].dstBinding = dstBinding;
+		descriptorWrites[dstBinding].dstArrayElement = 0;
+		descriptorWrites[dstBinding].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrites[dstBinding].descriptorCount = 1;
+		descriptorWrites[dstBinding].pBufferInfo = &ubobufferInfo;
+		descriptorWrites[dstBinding].pImageInfo = nullptr;
+		descriptorWrites[dstBinding].pTexelBufferView = nullptr;
 
-		writeIdx = 1;
+		dstBinding += 1;
 
-		for (size_t j = 0; j < skins.size(); j++) {
-			VkDescriptorBufferInfo jointMatricesbufferInfo{};
-			jointMatricesbufferInfo.buffer = skins[j].jointMatricesbuffers[i];
-			jointMatricesbufferInfo.offset = 0;
-			jointMatricesbufferInfo.range = sizeof(glm::mat4) * skins[j].inverseBindMatrices.size();
-			skins[j].jointMatricesDescriptorSets[i] = descriptorSets[i];
+		VkDescriptorBufferInfo jointMatricesbufferInfo{};
+		jointMatricesbufferInfo.buffer = skins[0].jointMatricesbuffers[i];
+		jointMatricesbufferInfo.offset = 0;
+		jointMatricesbufferInfo.range = sizeof(glm::mat4) * skins[0].inverseBindMatrices.size();
 
-			descriptorWrites[writeIdx + j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[writeIdx + j].dstSet = descriptorSets[i];
-			descriptorWrites[writeIdx + j].dstBinding = writeIdx + j;
-			descriptorWrites[writeIdx + j].dstArrayElement = 0;
-			descriptorWrites[writeIdx + j].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-			descriptorWrites[writeIdx + j].descriptorCount = 1;
-			descriptorWrites[writeIdx + j].pBufferInfo = &jointMatricesbufferInfo;
-			descriptorWrites[writeIdx + j].pImageInfo = nullptr;
-			descriptorWrites[writeIdx + j].pTexelBufferView = nullptr;
-		}
-		writeIdx += skins.size();
-		for (size_t j = 0; j < imgProps.size(); j++) {
-			VkDescriptorImageInfo imageInfo{};
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = imgProps[0].view;
-			imageInfo.sampler = imgProps[0].sampler;
-			//imgProps[j].descriptorSet = descriptorSets[i];
+		descriptorWrites[dstBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[dstBinding].dstSet = descriptorSets[i];
+		descriptorWrites[dstBinding].dstBinding = dstBinding;
+		descriptorWrites[dstBinding].dstArrayElement = 0;
+		descriptorWrites[dstBinding].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		descriptorWrites[dstBinding].descriptorCount = 1;
+		descriptorWrites[dstBinding].pBufferInfo = &jointMatricesbufferInfo;
+		descriptorWrites[dstBinding].pImageInfo = nullptr;
+		descriptorWrites[dstBinding].pTexelBufferView = nullptr;
+		dstBinding++;
 
-			descriptorWrites[writeIdx + j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[writeIdx + j].dstSet = descriptorSets[i];
-			descriptorWrites[writeIdx + j].dstBinding = writeIdx + j;
-			descriptorWrites[writeIdx + j].dstArrayElement = 0;
-			descriptorWrites[writeIdx + j].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrites[writeIdx + j].descriptorCount = 1;
-			descriptorWrites[writeIdx + j].pBufferInfo = nullptr;
-			descriptorWrites[writeIdx + j].pImageInfo = &imageInfo;
-			descriptorWrites[writeIdx + j].pTexelBufferView = nullptr;
-		}
+		VkDescriptorImageInfo baseColorImageInfo{};
+		baseColorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		baseColorImageInfo.imageView = imgProps[0].view;
+		baseColorImageInfo.sampler = imgProps[0].sampler;
+
+		descriptorWrites[dstBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[dstBinding].dstSet = descriptorSets[i];
+		descriptorWrites[dstBinding].dstBinding = dstBinding;
+		descriptorWrites[dstBinding].dstArrayElement = 0;
+		descriptorWrites[dstBinding].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorWrites[dstBinding].descriptorCount = 1;
+		descriptorWrites[dstBinding].pBufferInfo = nullptr;
+		descriptorWrites[dstBinding].pImageInfo = &baseColorImageInfo;
+		descriptorWrites[dstBinding].pTexelBufferView = nullptr;
+		dstBinding++;
+
+		VkDescriptorImageInfo metallicRoughnessImageInfo{};
+		metallicRoughnessImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		metallicRoughnessImageInfo.imageView = imgProps[1].view;
+		metallicRoughnessImageInfo.sampler = imgProps[1].sampler;
+
+		descriptorWrites[dstBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[dstBinding].dstSet = descriptorSets[i];
+		descriptorWrites[dstBinding].dstBinding = dstBinding;
+		descriptorWrites[dstBinding].dstArrayElement = 0;
+		descriptorWrites[dstBinding].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorWrites[dstBinding].descriptorCount = 1;
+		descriptorWrites[dstBinding].pBufferInfo = nullptr;
+		descriptorWrites[dstBinding].pImageInfo = &metallicRoughnessImageInfo;
+		descriptorWrites[dstBinding].pTexelBufferView = nullptr;
+		dstBinding++;
+
+		VkDescriptorImageInfo normalImageInfo{};
+		normalImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		normalImageInfo.imageView = imgProps[2].view;
+		normalImageInfo.sampler = imgProps[2].sampler;
+
+		descriptorWrites[dstBinding].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[dstBinding].dstSet = descriptorSets[i];
+		descriptorWrites[dstBinding].dstBinding = dstBinding;
+		descriptorWrites[dstBinding].dstArrayElement = 0;
+		descriptorWrites[dstBinding].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorWrites[dstBinding].descriptorCount = 1;
+		descriptorWrites[dstBinding].pBufferInfo = nullptr;
+		descriptorWrites[dstBinding].pImageInfo = &normalImageInfo;
+		descriptorWrites[dstBinding].pTexelBufferView = nullptr;
+		dstBinding++;
+
 		vkUpdateDescriptorSets(rhi->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}
 }
